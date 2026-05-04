@@ -53,51 +53,7 @@ class LocationService {
         position.longitude,
       );
 
-      String city = 'Unknown City';
-      String area = 'Unknown Area';
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-
-        // Build city from most specific to least
-        city =
-            place.locality ??
-            place.subAdministrativeArea ??
-            place.administrativeArea ??
-            'Unknown City';
-
-        // Build pinpoint area: [name] [subThoroughfare] [thoroughfare]
-        // Include business/POI name (e.g., "Bitstorm Solutions") plus street address
-        List<String> areaParts = [];
-
-        // Business/POI name
-        if (place.name != null && place.name!.isNotEmpty) {
-          areaParts.add(place.name!);
-        }
-
-        // House/building number
-        if (place.subThoroughfare != null &&
-            place.subThoroughfare!.isNotEmpty) {
-          areaParts.add(place.subThoroughfare!);
-        }
-
-        // Street name
-        if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
-          areaParts.add(place.thoroughfare!);
-        }
-
-        if (areaParts.isNotEmpty) {
-          area = areaParts.join(', ');
-        } else if (place.street != null && place.street!.isNotEmpty) {
-          area = place.street!;
-        } else {
-          area = 'Unknown Area';
-        }
-      }
-
       final locationData = LocationData(
-        city: city,
-        area: area,
         latitude: position.latitude,
         longitude: position.longitude,
         timestamp: DateTime.now(),

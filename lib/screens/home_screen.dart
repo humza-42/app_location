@@ -129,15 +129,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _navigateToSavedLocations() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            SavedLocationsScreen(storageService: _storageService),
-      ),
-    );
-  }
+  // void _navigateToSavedLocations() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) =>
+  //           SavedLocationsScreen(storageService: _storageService),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -157,12 +157,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildLocationCard(),
-                    const SizedBox(height: 16),
-                    _buildSaveButton(),
-                    const SizedBox(height: 12),
-                    _buildViewHistoryButton(),
-                    const SizedBox(height: 12),
-                    _buildDeleteHistoryButton(),
+                    // const SizedBox(height: 16),
+                    // _buildSaveButton(),
+                    // const SizedBox(height: 12),
+                    // _buildViewHistoryButton(),
+                    // const SizedBox(height: 12),
+                    // _buildDeleteHistoryButton(),
                   ],
                 ),
               ),
@@ -216,8 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Longitude',
               _currentLocation?.longitude.toStringAsFixed(6) ?? 'N/A',
             ),
-            _buildInfoRow('Area', _currentLocation?.area ?? 'N/A'),
-            _buildInfoRow('City', _currentLocation?.city ?? 'N/A'),
+
             _buildInfoRow(
               'Timestamp',
               _formatTimestamp(_currentLocation?.timestamp),
@@ -266,16 +265,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildViewHistoryButton() {
-    return OutlinedButton.icon(
-      onPressed: _navigateToSavedLocations,
-      icon: const Icon(Icons.history),
-      label: const Text('View Saved Locations'),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-    );
-  }
+  // Widget _buildViewHistoryButton() {
+  //   return OutlinedButton.icon(
+  //     onPressed: _navigateToSavedLocations,
+  //     icon: const Icon(Icons.history),
+  //     label: const Text('View Saved Locations'),
+  //     style: OutlinedButton.styleFrom(
+  //       padding: const EdgeInsets.symmetric(vertical: 16),
+  //     ),
+  //   );
+  // }
 
   Widget _buildDeleteHistoryButton() {
     return TextButton.icon(
