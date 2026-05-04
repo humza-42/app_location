@@ -35,4 +35,10 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keySavedLocations);
   }
+
+  Future<LocationData?> getMostRecentLocation() async {
+    final locations = await getSavedLocations();
+    if (locations.isEmpty) return null;
+    return locations.last;
+  }
 }

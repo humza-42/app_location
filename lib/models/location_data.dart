@@ -28,6 +28,11 @@ class LocationData {
   }
 
   String toJson() => jsonEncode(toMap());
-  factory LocationData.fromJson(String json) =>
-      LocationData.fromMap(jsonDecode(json));
+  factory LocationData.fromJson(String json) {
+    final dynamicMap = jsonDecode(json) as Map<String, dynamic>;
+    final stringMap = dynamicMap.map(
+      (key, value) => MapEntry(key, value.toString()),
+    );
+    return LocationData.fromMap(stringMap);
+  }
 }

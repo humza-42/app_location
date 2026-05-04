@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'services/background_location_service.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize and start background location tracking silently
+  final backgroundService = BackgroundLocationService();
+  await backgroundService.initialize();
+  await backgroundService.start();
+
   runApp(const LocationApp());
 }
 

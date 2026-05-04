@@ -1,10 +1,10 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/location_data.dart';
 import '../services/location_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/location_dialogs.dart';
-import 'saved_locations_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final LocationService _locationService = LocationService();
   final StorageService _storageService = StorageService();
 
@@ -24,7 +24,73 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeLocation();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App opened/foregrounded
+        _logLocation('app open');
+        break;
+      case AppLifecycleState.paused:
+        // App went to background
+        _logLocation('app background');
+        break;
+      default:
+        // Ignore all other states
+        break;
+    }
+  }
+
+  Future<void> _logLocation(String event) async {
+    try {
+      Position position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: const Duration(seconds: 15),
+        );
+      } catch (e) {
+        // Fall back to most recently saved location
+        final savedLocation = await _storageService.getMostRecentLocation();
+        if (savedLocation != null) {
+          final now = DateTime.now();
+          developer.log(
+            '[$event] Location (from storage): lat=${savedLocation.latitude.toStringAsFixed(6)}, '
+            'lon=${savedLocation.longitude.toStringAsFixed(6)}, '
+            'time=${now.toIso8601String()}',
+            name: 'LocationTracker',
+          );
+          return;
+        }
+        rethrow;
+      }
+
+      final now = DateTime.now();
+      developer.log(
+        '[$event] Location: lat=${position.latitude.toStringAsFixed(6)}, '
+        'lon=${position.longitude.toStringAsFixed(6)}, '
+        'accuracy=${position.accuracy.toStringAsFixed(1)}m, '
+        'time=${now.toIso8601String()}',
+        name: 'LocationTracker',
+      );
+    } catch (e) {
+      developer.log(
+        '[$event] Failed to get location: $e',
+        name: 'LocationTracker',
+      );
+    }
   }
 
   Future<void> _initializeLocation() async {
@@ -37,7 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _statusMessage = 'Checking location services...';
     });
 
-    // Check if location services are enabled
     bool serviceEnabled = await _locationService.isLocationServiceEnabled();
     if (!mounted) return;
 
@@ -50,7 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Check and request location permission
     LocationPermission permission = await _locationService.checkPermission();
     if (!mounted) return;
 
@@ -77,24 +141,28 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Permission granted, get current location
     await _getCurrentLocation();
   }
 
   Future<void> _getCurrentLocation() async {
     try {
       LocationData location = await _locationService.getCurrentLocation();
-
       setState(() {
         _currentLocation = location;
         _statusMessage = 'Location fetched successfully';
         _isLoading = false;
       });
+      // Log initial location on app start as 'app open'
+      await _logLocation('app open');
     } catch (e) {
       setState(() {
         _statusMessage = 'Error getting location: $e';
         _isLoading = false;
       });
+      developer.log(
+        '[app open] Failed to get initial location: $e',
+        name: 'LocationTracker',
+      );
     }
   }
 
@@ -103,7 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _showSnackBar('No location to save');
       return;
     }
-
     try {
       await _storageService.saveLocation(_currentLocation!);
       _showSnackBar('Location saved successfully');
@@ -129,16 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // void _navigateToSavedLocations() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) =>
-  //           SavedLocationsScreen(storageService: _storageService),
-  //     ),
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,12 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildLocationCard(),
-                    // const SizedBox(height: 16),
-                    // _buildSaveButton(),
-                    // const SizedBox(height: 12),
-                    // _buildViewHistoryButton(),
-                    // const SizedBox(height: 12),
-                    // _buildDeleteHistoryButton(),
+                    const SizedBox(height: 16),
+                    _buildSaveButton(),
+                    const SizedBox(height: 12),
+                    _buildDeleteHistoryButton(),
                   ],
                 ),
               ),
@@ -216,7 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
               'Longitude',
               _currentLocation?.longitude.toStringAsFixed(6) ?? 'N/A',
             ),
-
             _buildInfoRow(
               'Timestamp',
               _formatTimestamp(_currentLocation?.timestamp),
@@ -264,17 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // Widget _buildViewHistoryButton() {
-  //   return OutlinedButton.icon(
-  //     onPressed: _navigateToSavedLocations,
-  //     icon: const Icon(Icons.history),
-  //     label: const Text('View Saved Locations'),
-  //     style: OutlinedButton.styleFrom(
-  //       padding: const EdgeInsets.symmetric(vertical: 16),
-  //     ),
-  //   );
-  // }
 
   Widget _buildDeleteHistoryButton() {
     return TextButton.icon(
